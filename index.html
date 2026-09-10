@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#151612">
+  <meta name="description" content="교수님의 애착템을 찾아보는 남사모의 인터랙티브 팀 소개.">
+  <title>남사모 — 교수님의 애착템</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="game" aria-label="남사모 애착템 탐색">
+    <div class="scene-frame">
+      <div id="scene" class="scene">
+        <img class="main-image" src="assets/main/main-image.png" alt="회의실 앞쪽에 선물 상자를 든 김남주 교수님, 왼쪽 빨간 자전거, 뒤쪽 문에서 바라보는 장대익 학장님" draggable="false">
+        <div id="hotspots"></div>
+      </div>
+    </div>
+    <div class="identity" aria-hidden="true">남사모 <span>애착템 탐색기</span></div>
+    <p id="hint" class="hint">반짝이는 곳을 살펴보자.</p>
+    <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
+    <section id="intro" class="intro" role="dialog" aria-modal="true" aria-labelledby="intro-title">
+      <div class="intro-stamp" aria-hidden="true">★ 남사모 PRESENTS ★</div>
+      <h1 id="intro-title"><span>남교수님의</span><span>애착아이템을</span><span>소개합니다.</span></h1>
+      <button id="start" class="start" type="button">▶ 눌러서 입장 ◀</button>
+    </section>
+    <section id="event" class="event" role="dialog" aria-modal="true" aria-labelledby="speaker" hidden>
+      <div class="shade"></div>
+      <button id="close" class="close" type="button" aria-label="탐색으로 돌아가기">닫기 <span>ESC</span></button>
+      <div id="visual" class="visual" aria-hidden="true"></div>
+      <div class="dialogue-wrap">
+        <div id="speaker" class="speaker">살펴보기</div>
+        <button id="dialogue" class="dialogue" type="button" aria-describedby="controls">
+          <span id="line" aria-hidden="true"></span>
+          <span id="next-label" class="next-label">다음 <span class="arrow">▼</span></span>
+        </button>
+        <p id="controls" class="controls">클릭 · Enter · Space: 문장 완성 / 다음 <span>Esc 돌아가기</span></p>
+      </div>
+    </section>
+  </main>
+  <script src="data.js"></script>
+  <script src="state.js"></script>
+  <script src="effects.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
