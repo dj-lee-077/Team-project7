@@ -10,6 +10,7 @@
   let zoomTimer;
   let returnTarget;
   let lastVisual = '';
+  let lastLineText = null;
   let seekBottle = false;
   let replaying = false;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -94,6 +95,7 @@
     event.classList.toggle('final-event', id === 'finger');
     game.classList.add('in-event');
     lastVisual = '';
+    lastLineText = null;
     visual.replaceChildren();
     $('speaker').textContent = '살펴보기';
     $('line').textContent = '';
@@ -131,7 +133,7 @@
     holder.style.aspectRatio = `${p.w * imageRatio} / ${p.h}`;
     holder.style.setProperty('--crop-ratio', p.w * imageRatio / p.h);
     const img = document.createElement('img');
-    img.src = data.scene.image;
+    img.src = state.step?.cropImage || data.scene.image;
     img.alt = '';
     Object.assign(img.style, { width: `${10000 / p.w}%`, left: `${-p.x / p.w * 100}%`, top: `${-p.y / p.h * 100}%` });
     holder.append(img);
@@ -139,7 +141,7 @@
   }
 
   function renderVisual(item, mode) {
-    const key = `${item.id}:${mode}`;
+    const key = `${item.id}:${mode}:${state.step?.image || state.step?.cropImage || ''}`;
     if (lastVisual === key) return;
     lastVisual = key;
     visual.replaceChildren();
@@ -155,7 +157,7 @@
       visual.classList.add('reveal-pop');
       if (['bottle', 'finger'].includes(item.id)) visual.classList.add('reveal-secret');
     }
-    const assetPath = silhouette ? item.silhouette : mode === 'reveal' ? item.revealImage : mode === 'object' ? item.objectImage : null;
+    const assetPath = state.step?.image || (silhouette ? item.silhouette : mode === 'reveal' ? item.revealImage : mode === 'object' ? item.objectImage : null);
     if (assetPath) {
       const img = document.createElement('img');
       img.className = `asset${silhouette ? ' silhouette' : ''}`;
@@ -187,9 +189,17 @@
       ? `${item.member.name} · ${item.member.role}` : '살펴보기';
     // 화면 읽기 프로그램은 매 글자 대신 완성된 문장을 버튼 이름으로 읽습니다.
     dialogue.setAttribute('aria-label', step.text);
-    dialogue.classList.add('typing');
     $('next-label').textContent = '문장 완성';
-    writer.start(step.text, { instant: reducedMotion.matches });
+    if (lastLineText === step.text) {
+      writer.cancel();
+      dialogue.classList.remove('typing');
+      $('line').textContent = step.text;
+      updateNextLabel();
+    } else {
+      lastLineText = step.text;
+      dialogue.classList.add('typing');
+      writer.start(step.text, { instant: reducedMotion.matches });
+    }
     renderVisual(item, step.visual);
   }
 
@@ -210,6 +220,7 @@
     dialogue.classList.remove('typing');
     state.close();
     lastVisual = '';
+    lastLineText = null;
     event.hidden = true;
     scene.inert = false;
     game.classList.remove('in-event');
@@ -225,7 +236,7 @@
     } else {
       scene.style.transform = '';
       $('hint').textContent = result.fingerJustUnlocked
-        ? '[교수님의 엄지가 빛나기 시작하는 대사]' : '반짝이는 곳을 살펴보자.';
+        ? '[교수님의 엄지가 빛나기 시작하는 대사]' : '★ 반짝이는 곳을 찾아보자 ★';
       $('hint').hidden = false;
       if (result.fingerJustUnlocked) $('announcement').textContent = '교수님의 위로 세운 엄지에 새로운 빛이 나타났습니다.';
       returnTarget?.focus({ preventScroll: true });
@@ -266,7 +277,7 @@
     } else if (e.key === 'Escape' && seekBottle) {
       seekBottle = false;
       scene.style.transform = '';
-      $('hint').textContent = '반짝이는 곳을 살펴보자.';
+      $('hint').textContent = '★ 반짝이는 곳을 찾아보자 ★';
       $('hint').hidden = false;
     }
   });
