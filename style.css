@@ -4,18 +4,32 @@ body { margin: 0; background: #151612; color: var(--paper); font-family: 'Gungsu
 button { font: inherit; cursor: pointer; }
 button:focus-visible { outline: 3px dashed #e6ff99; outline-offset: 5px; }
 [hidden] { display: none !important; }
-#game { position: relative; width: 100%; height: 100svh; min-height: 400px; overflow: hidden; isolation: isolate; }
-.scene-frame { position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden; }
-.scene { position: relative; width: min(100vw, 150svh); aspect-ratio: 3/2; flex-shrink: 0; transition: transform .65s cubic-bezier(.22,.7,.2,1), filter .65s; }
+#game { --caption-height: 76px; position: relative; width: 100%; height: 100svh; min-height: 400px; overflow: hidden; isolation: isolate; }
+.scene-frame { position: absolute; inset: 0 0 var(--caption-height); display: grid; place-items: center; overflow: hidden; }
+.scene { position: relative; width: min(100vw, calc((100svh - var(--caption-height)) * 4 / 3)); aspect-ratio: 4/3; flex-shrink: 0; transition: transform .65s cubic-bezier(.22,.7,.2,1), filter .65s; }
 .main-image { display: block; width: 100%; height: auto; user-select: none; }
+.scene-art { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+/* 제공된 1867×842 화면에서 중앙 사진(470,0 / 995×746)만 표시합니다. */
+.final-scene-image { position: absolute; top: 0; left: -47.236181%; width: 187.638191%; max-width: none; height: auto; opacity: 0; user-select: none; }
+.scene.finger-unlocked .final-scene-image { opacity: 1; }
+.scene.finger-unlocked .main-image { visibility: hidden; }
+/* 마지막 사진에는 술병 테두리도 포함되어 있어 중복 발광을 막습니다. */
+.scene.finger-unlocked .hotspot[data-item="bottle"] .hotspot-glow { display: none; }
 .identity { position: absolute; top: 20px; left: 24px; padding: 7px 10px; background: #151612b5; font-size: 16px; letter-spacing: .08em; pointer-events: none; }
 .identity span { margin-left: 12px; opacity: .6; font-size: 12px; letter-spacing: 0; }
-.hint { position: absolute; bottom: 17px; left: 50%; transform: translateX(-50%); margin: 0; padding: 8px 13px; color: #fffde7; background: #151612b5; font-size: 14px; white-space: nowrap; pointer-events: none; }
+.hint { position: absolute; bottom: 0; left: 0; width: 100%; min-height: var(--caption-height); margin: 0; padding: 12px 20px; display: grid; place-items: center; color: #fffde7; background: #151612; font-size: 27px; line-height: 1.35; text-align: center; pointer-events: none; }
 .hotspot { position: absolute; transform: translate(-50%, -50%); border: 0; background: transparent; padding: 0; touch-action: manipulation; }
 .hotspot::after { content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 100%; height: 100%; min-width: 36px; min-height: 36px; }
+.hotspot-glow { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; fill: none; stroke: #fff36b; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 4px #ffe900) drop-shadow(0 0 12px #ffdf5dcc); opacity: .88; }
+.hotspot-glow path { vector-effect: non-scaling-stroke; }
+.hotspot:hover .hotspot-glow, .hotspot:focus-visible .hotspot-glow { opacity: 1; stroke-width: 2.8; }
+.hotspot.final .hotspot-glow { stroke-width: 3; filter: drop-shadow(0 0 6px #fff000) drop-shadow(0 0 18px #ffe66b); }
+.hotspot[data-item="bottle"] .hotspot-glow { stroke: #ffe39a; stroke-width: 1.25; opacity: .75; filter: drop-shadow(0 0 2px #ffe39a99) drop-shadow(0 0 5px #ffda7766); }
+.hotspot[data-item="bottle"]:hover .hotspot-glow, .hotspot[data-item="bottle"]:focus-visible .hotspot-glow { stroke-width: 1.5; opacity: .9; }
 .fairy-dust { position: absolute; inset: 0; display: block; pointer-events: none; overflow: visible; opacity: .8; transition: opacity .25s; }
 .dust-grain { position: absolute; display: block; left: var(--x); top: var(--y); width: var(--size); height: var(--size); border-radius: 50%; background: #fff9d2; box-shadow: 0 0 4px 1px #ffe9a9a0, 0 0 10px 2px #ffe48b35; opacity: .65; animation: dust-drift var(--duration) var(--delay) infinite ease-in-out; }
 .dust-grain:nth-child(5n) { background: #fff; box-shadow: 0 0 5px 2px #fff6cca0, 0 0 13px 3px #ffeaa340; }
+.fairy-dust .dust-grain { width: calc(var(--size) * 1.5); height: calc(var(--size) * 1.5); box-shadow: 0 0 5px 2px #fff193b0, 0 0 12px 3px #ffe76b60; }
 .hotspot:hover .fairy-dust, .hotspot:focus-visible .fairy-dust { opacity: 1; }
 .hotspot.discovered .dust-grain { background: #f0ffdb; box-shadow: 0 0 4px 1px #e6ffbca0, 0 0 10px 2px #daff9635; }
 .hotspot.final .fairy-dust { opacity: 1; }
@@ -34,17 +48,20 @@ button:focus-visible { outline: 3px dashed #e6ff99; outline-offset: 5px; }
 .close { position: absolute; z-index: 3; right: 24px; top: 20px; color: var(--paper); padding: 9px 12px; background: #24281dde; border: 1px solid #e0dfbb88; font-size: 14px; }
 .close span { opacity: .55; padding-left: 8px; font-size: 12px; }
 .visual { position: absolute; top: 8%; bottom: 35%; left: 15%; right: 15%; display: flex; justify-content: center; align-items: center; min-width: 0; min-height: 0; }
-.visual img.asset { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; filter: drop-shadow(8px 12px 0 #0006); animation: arrive .4s ease-out; }
-.visual img.silhouette { filter: brightness(0) drop-shadow(2px 0 0 #fff48c) drop-shadow(-2px 0 0 #fff48c) drop-shadow(0 0 18px #fff48caa); }
+.visual { --item-glow: drop-shadow(1px 0 0 #fff48c) drop-shadow(-1px 0 0 #fff48c) drop-shadow(0 1px 0 #fff48c) drop-shadow(0 -1px 0 #fff48c) drop-shadow(0 0 8px #ffe976a0) drop-shadow(0 0 22px #fff48c80); }
+.visual:not(:empty)::after { content: ''; position: absolute; inset: -4%; z-index: -1; pointer-events: none; background: radial-gradient(ellipse, #fff17620 0%, #fff48c12 35%, transparent 70%); }
+.visual img.asset { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; filter: var(--item-glow); animation: arrive .4s ease-out; }
+.visual img.silhouette { filter: brightness(0) var(--item-glow); }
 .placeholder { text-align: center; text-shadow: 3px 3px #000; }
-.placeholder .unknown { display: block; font: 900 clamp(64px, 13svh, 150px)/1 'Courier New', monospace; color: #131610; text-shadow: -2px -2px 0 #dbeea2, 2px 2px 0 #dbeea2, 0 0 35px #cee19c55; }
+.placeholder .unknown { display: block; font: 900 clamp(64px, 13svh, 150px)/1 'Courier New', monospace; color: #131610; text-shadow: -1px -1px 0 #fff48c, 1px 1px 0 #fff48c, 0 0 12px #ffe976a0, 0 0 30px #fff48c80; }
 .placeholder small { display: block; font-size: 14px; line-height: 1.7; color: #e9eccf; margin-top: 20px; }
-.placeholder .pending-name { font-size: clamp(24px, 4vw, 46px); color: var(--acid); }
+.placeholder .pending-name { font-size: clamp(24px, 4vw, 46px); color: #fff48c; text-shadow: 0 0 8px #ffe976a0, 0 0 22px #fff48c80; }
 .crop { width: min(56vw, 620px, calc(43svh * var(--crop-ratio))); flex-shrink: 0; overflow: hidden; position: relative; box-shadow: 10px 12px 0 #0004; animation: arrive .35s ease-out; }
 .crop img { display: block; position: absolute; max-width: none; }
 .box-opening { perspective: 1000px; }
 .box-opening .crop { transform-origin: bottom; animation: box-open .75s both; }
 .empty-label { background: #141510; padding: 30px 48px; border: 3px double #847953; font-size: clamp(24px, 4vw, 48px); transform: rotate(-4deg); box-shadow: 8px 8px #0005; animation: arrive .35s ease-out; }
+.visual .crop, .visual .empty-label { box-shadow: 0 0 0 1px #fff48c, 0 0 10px #ffe976a0, 0 0 28px #fff48c80; }
 .dialogue-wrap { position: absolute; left: max(24px, calc((100vw - 1050px)/2)); right: max(24px, calc((100vw - 1050px)/2)); bottom: 25px; }
 .speaker { display: table; position: relative; margin-left: 9px; padding: 8px 23px; background: linear-gradient(90deg, #130078, #8334b4); color: #ffff00; border: 3px outset #cacaca; border-bottom: 0; font-weight: 700; font-size: 18px; text-shadow: 2px 2px #000; transform: rotate(-2deg); }
 .dialogue { position: relative; display: block; text-align: left; width: 100%; min-height: 148px; padding: 27px 32px 50px; border: 7px ridge #d9d9d9; outline: 2px solid #17113f; background: repeating-linear-gradient(0deg, #fff8b5 0 3px, #fff5a5 3px 4px); color: var(--ink); box-shadow: 9px 10px 0 #0009; font-size: clamp(19px, 1.9vw, 26px); font-weight: 700; line-height: 1.55; touch-action: manipulation; }
@@ -88,7 +105,8 @@ button:focus-visible { outline: 3px dashed #e6ff99; outline-offset: 5px; }
   .visual { left: 8%; right: 8%; top: 12%; bottom: 40%; }
   .crop { width: min(78vw, calc(40svh * var(--crop-ratio))); }
   .close { top: 12px; right: 12px; }
-  .hint { bottom: 25px; font-size: 13px; }
+  #game { --caption-height: 88px; }
+  .hint { font-size: 24px; }
   .controls span { display: none; }
 }
 @media (max-height: 540px) and (min-width: 601px) {

@@ -6,6 +6,7 @@
   const game = $('game'), scene = $('scene'), event = $('event');
   const visual = $('visual'), dialogue = $('dialogue');
   const buttons = new Map();
+  const audio = globalThis.createGameAudio();
   let zoomTimer;
   let returnTarget;
   let lastVisual = '';
@@ -13,7 +14,10 @@
   let replaying = false;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const writer = globalThis.createDialogueWriter({
-    update: text => { $('line').textContent = text; },
+    update: text => {
+      if (text.length === $('line').textContent.length + 1 && text.trim()) audio.play('tick');
+      $('line').textContent = text;
+    },
     complete: () => {
       dialogue.classList.remove('typing');
       updateNextLabel();
@@ -47,6 +51,7 @@
     button.setAttribute('aria-label', `${item.name} 살펴보기`);
     const p = item.hotspot;
     Object.assign(button.style, { left: `${p.x}%`, top: `${p.y}%`, width: `${p.w}%`, height: `${p.h}%` });
+    if (!data.scene.bakedHighlights || item.id === 'bottle') button.append(globalThis.createHotspotGlow(item));
     button.append(dustFor(item));
     button.addEventListener('click', () => open(item.id));
     $('hotspots').append(button);
@@ -54,6 +59,10 @@
   }
 
   function updateHotspots() {
+    // 단순 클릭이 아니라 네 아이템의 대사 완료 상태로 장면과 마지막 이벤트를 함께 전환합니다.
+    scene.classList.toggle('finger-unlocked', state.fingerUnlocked);
+    $('main-image').setAttribute('aria-hidden', String(state.fingerUnlocked));
+    $('final-scene-image').setAttribute('aria-hidden', String(!state.fingerUnlocked));
     for (const [id, button] of buttons) {
       button.hidden = (id === 'bottle' && !state.bottleUnlocked) || (id === 'finger' && !state.fingerUnlocked);
       button.classList.toggle('discovered', state.has(id) || (id === 'dean' && state.bottleUnlocked));
@@ -71,6 +80,9 @@
     if (!$('intro').hidden) return;
     const isReplay = state.has(id);
     if (!state.open(id)) return;
+    audio.unlock();
+    audio.stop();
+    audio.play(id === 'finger' ? 'secret' : 'click');
     replaying = isReplay;
     writer.cancel();
     clearTimeout(zoomTimer);
@@ -115,10 +127,11 @@
     const holder = document.createElement('div');
     holder.className = 'crop';
     const p = item.crop;
-    holder.style.aspectRatio = `${p.w * 1.5} / ${p.h}`;
-    holder.style.setProperty('--crop-ratio', p.w * 1.5 / p.h);
+    const imageRatio = data.scene.width / data.scene.height;
+    holder.style.aspectRatio = `${p.w * imageRatio} / ${p.h}`;
+    holder.style.setProperty('--crop-ratio', p.w * imageRatio / p.h);
     const img = document.createElement('img');
-    img.src = 'assets/main/main-image.png';
+    img.src = data.scene.image;
     img.alt = '';
     Object.assign(img.style, { width: `${10000 / p.w}%`, left: `${-p.x / p.w * 100}%`, top: `${-p.y / p.h * 100}%` });
     holder.append(img);
@@ -133,6 +146,10 @@
     visual.className = 'visual';
     if (mode === 'none') return;
     const silhouette = mode === 'silhouette';
+    if (!replaying && state.step.phase === 'REVEAL') {
+      if (mode === 'empty') audio.play('empty');
+      else if (['object', 'reveal'].includes(mode)) audio.play(['bottle', 'finger'].includes(item.id) ? 'secret' : 'reveal');
+    }
     if (silhouette) visual.classList.add('silhouette-arrival');
     if (!replaying && state.step.phase === 'REVEAL' && item.id !== 'box' && ['object', 'reveal'].includes(mode)) {
       visual.classList.add('reveal-pop');
@@ -186,6 +203,8 @@
   }
 
   function returnToScene(result = {}) {
+    audio.stop();
+    audio.play(result.fingerJustUnlocked ? 'unlock' : result.id === 'dean' ? 'secret' : result.completed && !replaying ? 'found' : 'close');
     clearTimeout(zoomTimer);
     writer.cancel();
     dialogue.classList.remove('typing');
@@ -200,12 +219,14 @@
       seekBottle = true;
       zoom(data.items.bottle, 1.5);
       $('hint').textContent = '문 아래에서 새로운 빛이 보인다.';
+      $('hint').hidden = false;
       $('announcement').textContent = '문 아래에 새로운 탐색 지점이 열렸습니다.';
       buttons.get('bottle').focus({ preventScroll: true });
     } else {
       scene.style.transform = '';
       $('hint').textContent = result.fingerJustUnlocked
         ? '[교수님의 엄지가 빛나기 시작하는 대사]' : '반짝이는 곳을 살펴보자.';
+      $('hint').hidden = false;
       if (result.fingerJustUnlocked) $('announcement').textContent = '교수님의 위로 세운 엄지에 새로운 빛이 나타났습니다.';
       returnTarget?.focus({ preventScroll: true });
     }
@@ -213,6 +234,8 @@
 
   function advance() {
     if (!state.active || state.phase === 'ZOOM') return;
+    audio.unlock();
+    audio.play('next');
     // 출력 중 첫 입력은 문장을 완성하고, 다음 입력부터 진행 상태를 바꿉니다.
     if (writer.finish()) return;
     const result = state.advance();
@@ -236,16 +259,21 @@
         e.preventDefault(); advance();
       } else if (e.key === 'Tab') {
         e.preventDefault();
-        (document.activeElement === dialogue || dialogue.disabled ? $('close') : dialogue).focus();
+        const controls = [$('close'), dialogue].filter(button => !button.disabled);
+        const index = controls.indexOf(document.activeElement);
+        controls[(index + (e.shiftKey ? -1 : 1) + controls.length) % controls.length].focus();
       }
     } else if (e.key === 'Escape' && seekBottle) {
       seekBottle = false;
       scene.style.transform = '';
       $('hint').textContent = '반짝이는 곳을 살펴보자.';
+      $('hint').hidden = false;
     }
   });
   scene.inert = true;
   $('start').addEventListener('click', () => {
+    audio.unlock();
+    audio.play('start');
     $('intro').hidden = true;
     scene.inert = false;
     // 시작 직후 상자가 선택된 것처럼 보이던 자동 포커스 테두리를 제거합니다.

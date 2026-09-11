@@ -1,9 +1,9 @@
-# 남사모 랜딩페이지 코드
+# 문송합니다 랜딩페이지 코드
 
 > 이 문서는 현재 인터랙티브 랜딩페이지의 실행 소스를 GitHub에서 한 파일로 확인할 수 있도록 모은 스냅샷입니다.
 > 실제 실행은 아래 파일들이 각각 분리된 상태로 동작합니다.
 
-- 생성일: 2026-09-10
+- 생성일: 2026-09-11
 - 기술: HTML, CSS, Vanilla JavaScript
 - 실행 파일: `index.html`
 - 이미지 폴더: `assets/`
@@ -17,6 +17,8 @@
 | `data.js` | 아이템 좌표, 진행 단계, 대사, 이미지 경로, 팀원 연결 |
 | `state.js` | 발견 상태, 중단·재방문, 술병·손가락 해금 |
 | `effects.js` | 대사 타이핑, 즉시 완성, 타이머 취소 |
+| `audio.js` | 사용자 입장 후 재생하는 합성 효과음 |
+| `highlights.js` | 아이템 강조용 SVG |
 | `script.js` | Hotspot 생성, 입력, 장면 전환, 이미지 렌더링 |
 
 ## 실행 흐름
@@ -24,7 +26,7 @@
 `인트로 → 자유 탐색 → Hotspot 클릭 → 줌·블러 → 대사 타이핑 → 실루엣 → 공개 → 탐색 복귀`
 
 - 학장님을 끝까지 조사하면 술병 Hotspot이 나타납니다.
-- 안경·자전거·상자·술병을 끝까지 발견하면 위로 세운 엄지가 활성화됩니다.
+- 안경·자전거·상자·술병을 자유 순서로 끝까지 발견하면 새 장면으로 바뀌고 위로 세운 엄지가 활성화됩니다.
 - 대사 출력 중 첫 클릭은 문장을 완성하고, 다음 클릭부터 다음 단계로 이동합니다.
 - 중간에 닫으면 발견 처리되지 않으며, 완료한 아이템을 다시 열면 공개·설명 단계부터 시작합니다.
 
@@ -39,23 +41,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#151612">
-  <meta name="description" content="교수님의 애착템을 찾아보는 남사모의 인터랙티브 팀 소개.">
-  <title>남사모 — 교수님의 애착템</title>
+  <meta name="description" content="교수님의 애착템을 찾아보는 문송합니다의 인터랙티브 팀 소개.">
+  <title>문송합니다 — 교수님의 애착템</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main id="game" aria-label="남사모 애착템 탐색">
+  <main id="game" aria-label="문송합니다 애착템 탐색">
     <div class="scene-frame">
       <div id="scene" class="scene">
-        <img class="main-image" src="assets/main/main-image.png" alt="회의실 앞쪽에 선물 상자를 든 김남주 교수님, 왼쪽 빨간 자전거, 뒤쪽 문에서 바라보는 장대익 학장님" draggable="false">
+        <div class="scene-art">
+          <img id="main-image" class="main-image" src="assets/main/main-image-v3.png" alt="회의실에서 애착템 3종 세트 상자를 든 김남주 교수님." draggable="false">
+          <img id="final-scene-image" class="final-scene-image" src="assets/main/finger-unlocked-screen.png" alt="자신의 빛나는 손을 놀란 표정으로 바라보는 김남주 교수님." aria-hidden="true" draggable="false">
+        </div>
         <div id="hotspots"></div>
       </div>
     </div>
-    <div class="identity" aria-hidden="true">남사모 <span>애착템 탐색기</span></div>
+    <div class="identity" aria-hidden="true">문송합니다 <span>애착템을 찾아보자!</span></div>
     <p id="hint" class="hint">반짝이는 곳을 살펴보자.</p>
     <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
     <section id="intro" class="intro" role="dialog" aria-modal="true" aria-labelledby="intro-title">
-      <div class="intro-stamp" aria-hidden="true">★ 남사모 PRESENTS ★</div>
+      <div class="intro-stamp" aria-hidden="true">★ 문송합니다 PRESENTS ★</div>
       <h1 id="intro-title"><span>남교수님의</span><span>애착아이템을</span><span>소개합니다.</span></h1>
       <button id="start" class="start" type="button">▶ 눌러서 입장 ◀</button>
     </section>
@@ -76,6 +81,8 @@
   <script src="data.js"></script>
   <script src="state.js"></script>
   <script src="effects.js"></script>
+  <script src="audio.js"></script>
+  <script src="highlights.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
@@ -90,18 +97,32 @@ body { margin: 0; background: #151612; color: var(--paper); font-family: 'Gungsu
 button { font: inherit; cursor: pointer; }
 button:focus-visible { outline: 3px dashed #e6ff99; outline-offset: 5px; }
 [hidden] { display: none !important; }
-#game { position: relative; width: 100%; height: 100svh; min-height: 400px; overflow: hidden; isolation: isolate; }
-.scene-frame { position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden; }
-.scene { position: relative; width: min(100vw, 150svh); aspect-ratio: 3/2; flex-shrink: 0; transition: transform .65s cubic-bezier(.22,.7,.2,1), filter .65s; }
+#game { --caption-height: 76px; position: relative; width: 100%; height: 100svh; min-height: 400px; overflow: hidden; isolation: isolate; }
+.scene-frame { position: absolute; inset: 0 0 var(--caption-height); display: grid; place-items: center; overflow: hidden; }
+.scene { position: relative; width: min(100vw, calc((100svh - var(--caption-height)) * 4 / 3)); aspect-ratio: 4/3; flex-shrink: 0; transition: transform .65s cubic-bezier(.22,.7,.2,1), filter .65s; }
 .main-image { display: block; width: 100%; height: auto; user-select: none; }
+.scene-art { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+/* 제공된 1867×842 화면에서 중앙 사진(470,0 / 995×746)만 표시합니다. */
+.final-scene-image { position: absolute; top: 0; left: -47.236181%; width: 187.638191%; max-width: none; height: auto; opacity: 0; user-select: none; }
+.scene.finger-unlocked .final-scene-image { opacity: 1; }
+.scene.finger-unlocked .main-image { visibility: hidden; }
+/* 마지막 사진에는 술병 테두리도 포함되어 있어 중복 발광을 막습니다. */
+.scene.finger-unlocked .hotspot[data-item="bottle"] .hotspot-glow { display: none; }
 .identity { position: absolute; top: 20px; left: 24px; padding: 7px 10px; background: #151612b5; font-size: 16px; letter-spacing: .08em; pointer-events: none; }
 .identity span { margin-left: 12px; opacity: .6; font-size: 12px; letter-spacing: 0; }
-.hint { position: absolute; bottom: 17px; left: 50%; transform: translateX(-50%); margin: 0; padding: 8px 13px; color: #fffde7; background: #151612b5; font-size: 14px; white-space: nowrap; pointer-events: none; }
+.hint { position: absolute; bottom: 0; left: 0; width: 100%; min-height: var(--caption-height); margin: 0; padding: 12px 20px; display: grid; place-items: center; color: #fffde7; background: #151612; font-size: 27px; line-height: 1.35; text-align: center; pointer-events: none; }
 .hotspot { position: absolute; transform: translate(-50%, -50%); border: 0; background: transparent; padding: 0; touch-action: manipulation; }
 .hotspot::after { content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 100%; height: 100%; min-width: 36px; min-height: 36px; }
+.hotspot-glow { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; fill: none; stroke: #fff36b; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 4px #ffe900) drop-shadow(0 0 12px #ffdf5dcc); opacity: .88; }
+.hotspot-glow path { vector-effect: non-scaling-stroke; }
+.hotspot:hover .hotspot-glow, .hotspot:focus-visible .hotspot-glow { opacity: 1; stroke-width: 2.8; }
+.hotspot.final .hotspot-glow { stroke-width: 3; filter: drop-shadow(0 0 6px #fff000) drop-shadow(0 0 18px #ffe66b); }
+.hotspot[data-item="bottle"] .hotspot-glow { stroke: #ffe39a; stroke-width: 1.25; opacity: .75; filter: drop-shadow(0 0 2px #ffe39a99) drop-shadow(0 0 5px #ffda7766); }
+.hotspot[data-item="bottle"]:hover .hotspot-glow, .hotspot[data-item="bottle"]:focus-visible .hotspot-glow { stroke-width: 1.5; opacity: .9; }
 .fairy-dust { position: absolute; inset: 0; display: block; pointer-events: none; overflow: visible; opacity: .8; transition: opacity .25s; }
 .dust-grain { position: absolute; display: block; left: var(--x); top: var(--y); width: var(--size); height: var(--size); border-radius: 50%; background: #fff9d2; box-shadow: 0 0 4px 1px #ffe9a9a0, 0 0 10px 2px #ffe48b35; opacity: .65; animation: dust-drift var(--duration) var(--delay) infinite ease-in-out; }
 .dust-grain:nth-child(5n) { background: #fff; box-shadow: 0 0 5px 2px #fff6cca0, 0 0 13px 3px #ffeaa340; }
+.fairy-dust .dust-grain { width: calc(var(--size) * 1.5); height: calc(var(--size) * 1.5); box-shadow: 0 0 5px 2px #fff193b0, 0 0 12px 3px #ffe76b60; }
 .hotspot:hover .fairy-dust, .hotspot:focus-visible .fairy-dust { opacity: 1; }
 .hotspot.discovered .dust-grain { background: #f0ffdb; box-shadow: 0 0 4px 1px #e6ffbca0, 0 0 10px 2px #daff9635; }
 .hotspot.final .fairy-dust { opacity: 1; }
@@ -120,17 +141,20 @@ button:focus-visible { outline: 3px dashed #e6ff99; outline-offset: 5px; }
 .close { position: absolute; z-index: 3; right: 24px; top: 20px; color: var(--paper); padding: 9px 12px; background: #24281dde; border: 1px solid #e0dfbb88; font-size: 14px; }
 .close span { opacity: .55; padding-left: 8px; font-size: 12px; }
 .visual { position: absolute; top: 8%; bottom: 35%; left: 15%; right: 15%; display: flex; justify-content: center; align-items: center; min-width: 0; min-height: 0; }
-.visual img.asset { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; filter: drop-shadow(8px 12px 0 #0006); animation: arrive .4s ease-out; }
-.visual img.silhouette { filter: brightness(0) drop-shadow(2px 0 0 #fff48c) drop-shadow(-2px 0 0 #fff48c) drop-shadow(0 0 18px #fff48caa); }
+.visual { --item-glow: drop-shadow(1px 0 0 #fff48c) drop-shadow(-1px 0 0 #fff48c) drop-shadow(0 1px 0 #fff48c) drop-shadow(0 -1px 0 #fff48c) drop-shadow(0 0 8px #ffe976a0) drop-shadow(0 0 22px #fff48c80); }
+.visual:not(:empty)::after { content: ''; position: absolute; inset: -4%; z-index: -1; pointer-events: none; background: radial-gradient(ellipse, #fff17620 0%, #fff48c12 35%, transparent 70%); }
+.visual img.asset { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; filter: var(--item-glow); animation: arrive .4s ease-out; }
+.visual img.silhouette { filter: brightness(0) var(--item-glow); }
 .placeholder { text-align: center; text-shadow: 3px 3px #000; }
-.placeholder .unknown { display: block; font: 900 clamp(64px, 13svh, 150px)/1 'Courier New', monospace; color: #131610; text-shadow: -2px -2px 0 #dbeea2, 2px 2px 0 #dbeea2, 0 0 35px #cee19c55; }
+.placeholder .unknown { display: block; font: 900 clamp(64px, 13svh, 150px)/1 'Courier New', monospace; color: #131610; text-shadow: -1px -1px 0 #fff48c, 1px 1px 0 #fff48c, 0 0 12px #ffe976a0, 0 0 30px #fff48c80; }
 .placeholder small { display: block; font-size: 14px; line-height: 1.7; color: #e9eccf; margin-top: 20px; }
-.placeholder .pending-name { font-size: clamp(24px, 4vw, 46px); color: var(--acid); }
+.placeholder .pending-name { font-size: clamp(24px, 4vw, 46px); color: #fff48c; text-shadow: 0 0 8px #ffe976a0, 0 0 22px #fff48c80; }
 .crop { width: min(56vw, 620px, calc(43svh * var(--crop-ratio))); flex-shrink: 0; overflow: hidden; position: relative; box-shadow: 10px 12px 0 #0004; animation: arrive .35s ease-out; }
 .crop img { display: block; position: absolute; max-width: none; }
 .box-opening { perspective: 1000px; }
 .box-opening .crop { transform-origin: bottom; animation: box-open .75s both; }
 .empty-label { background: #141510; padding: 30px 48px; border: 3px double #847953; font-size: clamp(24px, 4vw, 48px); transform: rotate(-4deg); box-shadow: 8px 8px #0005; animation: arrive .35s ease-out; }
+.visual .crop, .visual .empty-label { box-shadow: 0 0 0 1px #fff48c, 0 0 10px #ffe976a0, 0 0 28px #fff48c80; }
 .dialogue-wrap { position: absolute; left: max(24px, calc((100vw - 1050px)/2)); right: max(24px, calc((100vw - 1050px)/2)); bottom: 25px; }
 .speaker { display: table; position: relative; margin-left: 9px; padding: 8px 23px; background: linear-gradient(90deg, #130078, #8334b4); color: #ffff00; border: 3px outset #cacaca; border-bottom: 0; font-weight: 700; font-size: 18px; text-shadow: 2px 2px #000; transform: rotate(-2deg); }
 .dialogue { position: relative; display: block; text-align: left; width: 100%; min-height: 148px; padding: 27px 32px 50px; border: 7px ridge #d9d9d9; outline: 2px solid #17113f; background: repeating-linear-gradient(0deg, #fff8b5 0 3px, #fff5a5 3px 4px); color: var(--ink); box-shadow: 9px 10px 0 #0009; font-size: clamp(19px, 1.9vw, 26px); font-weight: 700; line-height: 1.55; touch-action: manipulation; }
@@ -174,7 +198,8 @@ button:focus-visible { outline: 3px dashed #e6ff99; outline-offset: 5px; }
   .visual { left: 8%; right: 8%; top: 12%; bottom: 40%; }
   .crop { width: min(78vw, calc(40svh * var(--crop-ratio))); }
   .close { top: 12px; right: 12px; }
-  .hint { bottom: 25px; font-size: 13px; }
+  #game { --caption-height: 88px; }
+  .hint { font-size: 24px; }
   .controls span { display: none; }
 }
 @media (max-height: 540px) and (min-width: 601px) {
@@ -201,12 +226,13 @@ button:focus-visible { outline: 3px dashed #e6ff99; outline-offset: 5px; }
  * 각 이미지의 투명 배경 PNG/WebP 사용을 권장합니다.
  */
 globalThis.GAME_DATA = {
+  scene: { image: 'assets/main/main-image-v3.png', width: 1448, height: 1086, bakedHighlights: true },
   required: ['glasses', 'bicycle', 'box', 'bottle'],
   items: {
     box: {
-      id: 'box', name: '상자', hotspot: { x: 52, y: 80, w: 39, h: 24 }, zoom: 1.55,
+      id: 'box', name: '상자', hotspot: { x: 53.2, y: 73.4, w: 41.5, h: 26 }, zoom: 1.55,
       member: null, silhouette: null, revealImage: null,
-      crop: { x: 31, y: 66, w: 42, h: 31 },
+      crop: { x: 32.2, y: 59.8, w: 42, h: 26 },
       steps: [
         { phase: 'DIALOGUE', visual: 'object', text: '[상자를 열기 전 대사]' },
         { phase: 'REVEAL', visual: 'opening', text: '[상자를 여는 대사]' },
@@ -219,10 +245,10 @@ globalThis.GAME_DATA = {
       ]
     },
     bicycle: {
-      id: 'bicycle', name: '자전거', hotspot: { x: 12, y: 56, w: 23, h: 34 }, zoom: 1.65,
+      id: 'bicycle', name: '자전거', hotspot: { x: 12, y: 50.8, w: 24, h: 29 }, zoom: 1.65,
       member: null, silhouette: 'assets/items/bicycle-cutout.png', revealImage: null,
       objectImage: 'assets/items/bicycle-cutout.png',
-      crop: { x: 0, y: 39, w: 24, h: 36 },
+      crop: { x: 0, y: 36.2, w: 24, h: 29 },
       steps: [
         { phase: 'SILHOUETTE', visual: 'silhouette', text: '[자전거 실루엣 대사]' },
         { phase: 'DIALOGUE', visual: 'silhouette', text: '[자전거 정답 예상 대사]' },
@@ -231,9 +257,9 @@ globalThis.GAME_DATA = {
       ]
     },
     glasses: {
-      id: 'glasses', name: '안경', hotspot: { x: 59, y: 30, w: 17, h: 9 }, zoom: 2.1,
+      id: 'glasses', name: '안경', hotspot: { x: 60.8, y: 27, w: 18, h: 8.5 }, zoom: 2.1,
       member: { name: '성다희', role: '디자인 / 개발' }, silhouette: null, revealImage: null,
-      crop: { x: 49, y: 23, w: 20, h: 14 },
+      crop: { x: 51.5, y: 22.7, w: 18.5, h: 9 },
       steps: [
         { phase: 'SILHOUETTE', visual: 'silhouette', text: '[안경 실루엣 대사]' },
         { phase: 'DIALOGUE', visual: 'silhouette', text: '[안경 정답 예상 대사]' },
@@ -250,15 +276,15 @@ globalThis.GAME_DATA = {
       ]
     },
     dean: {
-      id: 'dean', name: '문가의 학장님', hotspot: { x: 28, y: 39, w: 7, h: 20 }, zoom: 1.9,
-      crop: { x: 25, y: 29, w: 8, h: 22 },
+      id: 'dean', name: '문가의 학장님', hotspot: { x: 28.9, y: 36.6, w: 5, h: 19 }, zoom: 1.9,
+      crop: { x: 26.5, y: 26.8, w: 5, h: 19.5 },
       steps: [
         { phase: 'DIALOGUE', visual: 'none', text: '[학장님 주변이 수상하다는 대사]' },
         { phase: 'DIALOGUE', visual: 'none', text: '[발 주변에서 새로운 빛을 발견하는 대사]' }
       ]
     },
     bottle: {
-      id: 'bottle', name: '문 아래의 빛', hotspot: { x: 29, y: 55, w: 5, h: 8 }, zoom: 2.3,
+      id: 'bottle', name: '문 아래의 빛', hotspot: { x: 29.5, y: 49.5, w: 4, h: 6 }, zoom: 2.3,
       member: { name: '이동준', role: '개발 / 기획' }, silhouette: null, revealImage: null,
       steps: [
         { phase: 'SILHOUETTE', visual: 'silhouette', text: '[숨겨진 술병 실루엣 대사]' },
@@ -269,7 +295,7 @@ globalThis.GAME_DATA = {
       ]
     },
     finger: {
-      id: 'finger', name: '위로 세운 엄지', hotspot: { x: 83.1, y: 54, w: 5, h: 13 }, zoom: 2.35,
+      id: 'finger', name: '위로 세운 엄지', hotspot: { x: 85.2, y: 48.2, w: 4.8, h: 9 }, zoom: 2.35,
       member: { name: '송우진', role: '기획 / 디자인' }, silhouette: null, revealImage: null,
       steps: [
         { phase: 'SILHOUETTE', visual: 'silhouette', text: '[빛나는 엄지 실루엣 대사]' },
@@ -397,6 +423,89 @@ globalThis.createDialogueWriter = function createDialogueWriter({
 };
 ```
 
+### audio.js
+
+```javascript
+// 외부 음원 없이 생성하는 짧은 게임 효과음. 사용자 입력 후에만 재생합니다.
+globalThis.createGameAudio = function () {
+  let context, master;
+  const playing = new Set();
+  let lastTick = 0;
+  function unlock() {
+    try {
+      const Audio = globalThis.AudioContext || globalThis.webkitAudioContext;
+      if (!Audio) return;
+      if (!context) {
+        context = new Audio(); master = context.createGain();
+        master.gain.value = .14; master.connect(context.destination);
+      }
+      if (context.state === 'suspended') context.resume().catch(() => {});
+    } catch { /* 소리 지원 여부와 무관하게 게임은 계속 진행합니다. */ }
+  }
+  const patterns = {
+    start: [[523, .07], [659, .07], [784, .13]],
+    click: [[880, .035], [1175, .045]],
+    next: [[740, .04]],
+    tick: [[440, .014]],
+    reveal: [[392, .06], [523, .06], [784, .16]],
+    secret: [[294, .07], [370, .07], [587, .09], [1175, .17]],
+    empty: [[330, .1], [220, .18]],
+    found: [[659, .07], [784, .07], [1047, .19]],
+    unlock: [[523, .08], [784, .1], [1047, .11], [1568, .2]],
+    close: [[587, .035], [392, .055]]
+  };
+  function play(name) {
+    if (!context || context.state === 'closed') return;
+    if (name === 'tick' && context.currentTime - lastTick < .095) return;
+    if (name === 'tick') lastTick = context.currentTime;
+    if (playing.size > 24) return;
+    let at = context.currentTime;
+    for (const [frequency, duration] of patterns[name] || []) {
+      const osc = context.createOscillator(), gain = context.createGain();
+      osc.type = name === 'tick' ? 'triangle' : 'square';
+      osc.frequency.value = frequency;
+      gain.gain.setValueAtTime(0, at);
+      gain.gain.linearRampToValueAtTime(name === 'tick' ? .18 : .36, at + .004);
+      gain.gain.exponentialRampToValueAtTime(.001, at + duration);
+      osc.connect(gain); gain.connect(master); playing.add(osc);
+      osc.onended = () => { playing.delete(osc); osc.disconnect(); gain.disconnect(); };
+      osc.start(at); osc.stop(at + duration + .01); at += duration + .018;
+    }
+  }
+  function stop() { for (const osc of playing) { try { osc.stop(); } catch {} } }
+  return { unlock, play, stop };
+};
+```
+
+### highlights.js
+
+```javascript
+// 원본 장면 좌표를 사용하는 클릭 영역 강조. 사진과 클릭 위치는 변경하지 않습니다.
+globalThis.createHotspotGlow = function (item) {
+  const paths = {
+    bicycle: ['M123 526 C71 496 28 541 10 615 C-8 688 10 742 49 750 C94 758 135 710 148 641 C162 578 151 546 123 526 Z', 'M305 511 C266 494 225 532 212 586 C195 641 205 684 234 693 C276 707 322 664 344 607 C368 551 344 520 305 511 Z', 'M72 640 L125 481 L216 650 L259 493 L125 481 M216 650 L303 602 L259 493 L269 432 M126 480 L136 446 L65 441 M57 431 C54 446 33 481 39 487 M144 447 C158 445 164 472 153 488 L180 496 M233 423 Q265 432 292 420'],
+    glasses: ['M788 307 L847 288 Q874 282 891 294 L900 309 Q902 339 867 351 Q831 366 807 344 Z M901 291 Q932 276 969 278 L993 287 L986 316 Q978 337 946 337 Q914 337 907 313 Z M891 296 Q900 290 908 294 M982 282 L1044 273'],
+    box: ['M486 775 L576 729 L1102 748 L1110 965 L486 953 Z'],
+    dean: ['M410 330 Q429 305 449 326 Q468 345 450 371 L463 398 L461 490 L408 528 L407 450 Q420 453 420 437 L407 428 L409 373 Q399 352 410 330 Z'],
+    bottle: ['M441 535 L451 535 L452 548 Q461 551 461 563 L461 593 Q447 599 433 593 L433 563 Q433 551 441 548 Z'],
+    finger: ['M1261 572 Q1250 552 1259 523 Q1266 498 1276 514 L1282 540 Q1308 560 1317 585 L1296 593 L1274 577 Z']
+  };
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  const p = item.hotspot;
+  svg.setAttribute('viewBox', `${(p.x-p.w/2)*15.36} ${(p.y-p.h/2)*10.24} ${p.w*15.36} ${p.h*10.24}`);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  if (item.id === 'bottle') svg.setAttribute('viewBox', '0 0 100 100');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.classList.add('hotspot-glow');
+  for (const d of item.id === 'bottle' ? ['M44 10 Q40 10 40 14 L40 29 C40 36 27 38 25 49 C23 59 24 74 24 84 Q24 92 32 93 Q50 96 68 93 Q76 92 76 84 C76 74 77 59 75 49 C73 38 60 36 60 29 L60 14 Q60 10 56 10 Z'] : paths[item.id] || []) {
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', d); svg.append(path);
+  }
+  return svg;
+};
+```
+
 ### script.js
 
 ```javascript
@@ -408,6 +517,7 @@ globalThis.createDialogueWriter = function createDialogueWriter({
   const game = $('game'), scene = $('scene'), event = $('event');
   const visual = $('visual'), dialogue = $('dialogue');
   const buttons = new Map();
+  const audio = globalThis.createGameAudio();
   let zoomTimer;
   let returnTarget;
   let lastVisual = '';
@@ -415,7 +525,10 @@ globalThis.createDialogueWriter = function createDialogueWriter({
   let replaying = false;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const writer = globalThis.createDialogueWriter({
-    update: text => { $('line').textContent = text; },
+    update: text => {
+      if (text.length === $('line').textContent.length + 1 && text.trim()) audio.play('tick');
+      $('line').textContent = text;
+    },
     complete: () => {
       dialogue.classList.remove('typing');
       updateNextLabel();
@@ -449,6 +562,7 @@ globalThis.createDialogueWriter = function createDialogueWriter({
     button.setAttribute('aria-label', `${item.name} 살펴보기`);
     const p = item.hotspot;
     Object.assign(button.style, { left: `${p.x}%`, top: `${p.y}%`, width: `${p.w}%`, height: `${p.h}%` });
+    if (!data.scene.bakedHighlights || item.id === 'bottle') button.append(globalThis.createHotspotGlow(item));
     button.append(dustFor(item));
     button.addEventListener('click', () => open(item.id));
     $('hotspots').append(button);
@@ -456,6 +570,10 @@ globalThis.createDialogueWriter = function createDialogueWriter({
   }
 
   function updateHotspots() {
+    // 단순 클릭이 아니라 네 아이템의 대사 완료 상태로 장면과 마지막 이벤트를 함께 전환합니다.
+    scene.classList.toggle('finger-unlocked', state.fingerUnlocked);
+    $('main-image').setAttribute('aria-hidden', String(state.fingerUnlocked));
+    $('final-scene-image').setAttribute('aria-hidden', String(!state.fingerUnlocked));
     for (const [id, button] of buttons) {
       button.hidden = (id === 'bottle' && !state.bottleUnlocked) || (id === 'finger' && !state.fingerUnlocked);
       button.classList.toggle('discovered', state.has(id) || (id === 'dean' && state.bottleUnlocked));
@@ -473,6 +591,9 @@ globalThis.createDialogueWriter = function createDialogueWriter({
     if (!$('intro').hidden) return;
     const isReplay = state.has(id);
     if (!state.open(id)) return;
+    audio.unlock();
+    audio.stop();
+    audio.play(id === 'finger' ? 'secret' : 'click');
     replaying = isReplay;
     writer.cancel();
     clearTimeout(zoomTimer);
@@ -517,10 +638,11 @@ globalThis.createDialogueWriter = function createDialogueWriter({
     const holder = document.createElement('div');
     holder.className = 'crop';
     const p = item.crop;
-    holder.style.aspectRatio = `${p.w * 1.5} / ${p.h}`;
-    holder.style.setProperty('--crop-ratio', p.w * 1.5 / p.h);
+    const imageRatio = data.scene.width / data.scene.height;
+    holder.style.aspectRatio = `${p.w * imageRatio} / ${p.h}`;
+    holder.style.setProperty('--crop-ratio', p.w * imageRatio / p.h);
     const img = document.createElement('img');
-    img.src = 'assets/main/main-image.png';
+    img.src = data.scene.image;
     img.alt = '';
     Object.assign(img.style, { width: `${10000 / p.w}%`, left: `${-p.x / p.w * 100}%`, top: `${-p.y / p.h * 100}%` });
     holder.append(img);
@@ -535,6 +657,10 @@ globalThis.createDialogueWriter = function createDialogueWriter({
     visual.className = 'visual';
     if (mode === 'none') return;
     const silhouette = mode === 'silhouette';
+    if (!replaying && state.step.phase === 'REVEAL') {
+      if (mode === 'empty') audio.play('empty');
+      else if (['object', 'reveal'].includes(mode)) audio.play(['bottle', 'finger'].includes(item.id) ? 'secret' : 'reveal');
+    }
     if (silhouette) visual.classList.add('silhouette-arrival');
     if (!replaying && state.step.phase === 'REVEAL' && item.id !== 'box' && ['object', 'reveal'].includes(mode)) {
       visual.classList.add('reveal-pop');
@@ -588,6 +714,8 @@ globalThis.createDialogueWriter = function createDialogueWriter({
   }
 
   function returnToScene(result = {}) {
+    audio.stop();
+    audio.play(result.fingerJustUnlocked ? 'unlock' : result.id === 'dean' ? 'secret' : result.completed && !replaying ? 'found' : 'close');
     clearTimeout(zoomTimer);
     writer.cancel();
     dialogue.classList.remove('typing');
@@ -602,12 +730,14 @@ globalThis.createDialogueWriter = function createDialogueWriter({
       seekBottle = true;
       zoom(data.items.bottle, 1.5);
       $('hint').textContent = '문 아래에서 새로운 빛이 보인다.';
+      $('hint').hidden = false;
       $('announcement').textContent = '문 아래에 새로운 탐색 지점이 열렸습니다.';
       buttons.get('bottle').focus({ preventScroll: true });
     } else {
       scene.style.transform = '';
       $('hint').textContent = result.fingerJustUnlocked
         ? '[교수님의 엄지가 빛나기 시작하는 대사]' : '반짝이는 곳을 살펴보자.';
+      $('hint').hidden = false;
       if (result.fingerJustUnlocked) $('announcement').textContent = '교수님의 위로 세운 엄지에 새로운 빛이 나타났습니다.';
       returnTarget?.focus({ preventScroll: true });
     }
@@ -615,6 +745,8 @@ globalThis.createDialogueWriter = function createDialogueWriter({
 
   function advance() {
     if (!state.active || state.phase === 'ZOOM') return;
+    audio.unlock();
+    audio.play('next');
     // 출력 중 첫 입력은 문장을 완성하고, 다음 입력부터 진행 상태를 바꿉니다.
     if (writer.finish()) return;
     const result = state.advance();
@@ -638,16 +770,21 @@ globalThis.createDialogueWriter = function createDialogueWriter({
         e.preventDefault(); advance();
       } else if (e.key === 'Tab') {
         e.preventDefault();
-        (document.activeElement === dialogue || dialogue.disabled ? $('close') : dialogue).focus();
+        const controls = [$('close'), dialogue].filter(button => !button.disabled);
+        const index = controls.indexOf(document.activeElement);
+        controls[(index + (e.shiftKey ? -1 : 1) + controls.length) % controls.length].focus();
       }
     } else if (e.key === 'Escape' && seekBottle) {
       seekBottle = false;
       scene.style.transform = '';
       $('hint').textContent = '반짝이는 곳을 살펴보자.';
+      $('hint').hidden = false;
     }
   });
   scene.inert = true;
   $('start').addEventListener('click', () => {
+    audio.unlock();
+    audio.play('start');
     $('intro').hidden = true;
     scene.inert = false;
     // 시작 직후 상자가 선택된 것처럼 보이던 자동 포커스 테두리를 제거합니다.
@@ -661,7 +798,8 @@ globalThis.createDialogueWriter = function createDialogueWriter({
 
 ## 이미지 교체 위치
 
-- `assets/main/main-image.png`: 메인 장면
+- `assets/main/main-image-v3.png`: 기본 메인 장면
+- `assets/main/finger-unlocked-screen.png`: 네 아이템 완료 후 장면 (CSS로 중앙 사진만 표시)
 - `assets/items/bicycle-cutout.png`: 자전거 실루엣·공개 이미지
 - `data.js`의 `silhouette`와 `revealImage`: 팀에서 제공할 실루엣 및 합성 이미지 경로
 
