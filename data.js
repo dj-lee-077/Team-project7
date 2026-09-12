@@ -37,7 +37,7 @@ globalThis.GAME_DATA = {
     },
     glasses: {
       id: 'glasses', name: '안경', hotspot: { x: 60.8, y: 27, w: 18, h: 8.5 }, zoom: 2.1,
-      member: { name: '성다희', role: '디자인 / 개발' }, silhouette: null, revealImage: 'assets/items/dahui-1.jpg',
+      member: { name: '성다희', role: '디자인 / 개발' }, silhouette: null, revealImage: 'assets/items/dahui-1.png',
       crop: { x: 51.5, y: 22.7, w: 18.5, h: 9 },
       steps: [
         { phase: 'DIALOGUE', visual: 'object', image: 'assets/items/glasses-1.png', text: '이것은,, ' },
@@ -45,13 +45,13 @@ globalThis.GAME_DATA = {
         { phase: 'DIALOGUE', visual: 'object', image: 'assets/items/glasses-1.png', text: '이거 없으면 아무도 못알아본다던데…' },
         { phase: 'DIALOGUE', visual: 'object', image: 'assets/items/glasses-2.png', text: '(눈 비비며) 음..? 뭐지..?' },
         { phase: 'DIALOGUE', visual: 'object', image: 'assets/items/glasses-3.png', text: '(눈 비비며) 음..? 뭐지..?' },
-        { phase: 'REVEAL', visual: 'reveal', image: 'assets/items/dahui-1.jpg', text: '어랏.. 너는 그 유명한 AI 비서 성다희..??!' },
-        { phase: 'TEAM_MEMBER', visual: 'reveal', image: 'assets/items/dahui-2.jpg', text: '“하핫,, 날 알아보다니,, 너도 이 바닥에서 많이 굴렀구나..”' }
+        { phase: 'REVEAL', visual: 'reveal', image: 'assets/items/dahui-1.png', text: '어랏.. 너는 그 유명한 AI 비서 성다희..??!' },
+        { phase: 'TEAM_MEMBER', visual: 'reveal', image: 'assets/items/dahui-2.png', text: '“하핫,, 날 알아보다니,, 너도 이 바닥에서 많이 굴렀구나..”' }
       ],
       revisit: [
-        { phase: 'REVEAL', visual: 'reveal', image: 'assets/items/dahui-1.jpg', text: '어랏.. 너는 그 유명한 AI 비서 성다희..??!' },
-        { phase: 'ITEM_DESCRIPTION', visual: 'reveal', image: 'assets/items/dahui-1.jpg', text: '이 안경 너머로 성다희를 발견했다.' },
-        { phase: 'TEAM_MEMBER', visual: 'reveal', image: 'assets/items/dahui-2.jpg', text: '“하핫,, 날 알아보다니,, 너도 이 바닥에서 많이 굴렀구나..”' }
+        { phase: 'REVEAL', visual: 'reveal', image: 'assets/items/dahui-1.png', text: '어랏.. 너는 그 유명한 AI 비서 성다희..??!' },
+        { phase: 'ITEM_DESCRIPTION', visual: 'reveal', image: 'assets/items/dahui-1.png', text: '이 안경 너머로 성다희를 발견했다.' },
+        { phase: 'TEAM_MEMBER', visual: 'reveal', image: 'assets/items/dahui-2.png', text: '“하핫,, 날 알아보다니,, 너도 이 바닥에서 많이 굴렀구나..”' }
       ]
     },
     dean: {
@@ -64,7 +64,7 @@ globalThis.GAME_DATA = {
     },
     bottle: {
       id: 'bottle', name: '문 아래의 빛', hotspot: { x: 29.5, y: 49.5, w: 4, h: 6 }, zoom: 2.3,
-      member: { name: '이동준', role: '개발 / 기획' }, silhouette: 'assets/items/dongjun-silhouette-1.png', revealImage: 'assets/items/dongjun-1.png',
+      member: { name: '이동준', role: '개발 / 기획' }, silhouette: 'assets/items/dongjun-silhouette-1.png', silhouetteFilter: 'natural', revealImage: 'assets/items/dongjun-1.png',
       steps: [
         { phase: 'SILHOUETTE', visual: 'silhouette', text: '설마 남교수님의 보물 26호 발렌타인 30년산 ?!' },
         { phase: 'REVEAL', visual: 'reveal', text: '버릇은 나쁘지만 술버릇은 좋은 이동준이였다!!' },

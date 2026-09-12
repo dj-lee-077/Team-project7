@@ -160,7 +160,7 @@
     const assetPath = state.step?.image || (silhouette ? item.silhouette : mode === 'reveal' ? item.revealImage : mode === 'object' ? item.objectImage : null);
     if (assetPath) {
       const img = document.createElement('img');
-      img.className = `asset${silhouette ? ' silhouette' : ''}`;
+      img.className = `asset${silhouette ? ' silhouette' : ''}${silhouette && item.silhouetteFilter === 'natural' ? ' natural-silhouette' : ''}`;
       img.alt = '';
       img.addEventListener('error', () => {
         // 이전 단계의 지연된 이미지 실패가 현재 화면을 덮어쓰지 않게 합니다.
