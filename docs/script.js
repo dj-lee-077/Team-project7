@@ -13,6 +13,12 @@
   let lastLineText = null;
   let seekBottle = false;
   let replaying = false;
+  let activeVideo = null;
+  function stopVideo() {
+    if (activeVideo) { activeVideo.pause(); activeVideo.removeAttribute('src'); activeVideo.load(); activeVideo = null; }
+    event.classList.remove('playing-video');
+    visual.setAttribute('aria-hidden', 'true');
+  }
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const writer = globalThis.createDialogueWriter({
     update: text => {
@@ -141,12 +147,34 @@
   }
 
   function renderVisual(item, mode) {
-    const key = `${item.id}:${mode}:${state.step?.image || state.step?.cropImage || ''}`;
+    const key = `${item.id}:${mode}:${state.step?.video || state.step?.image || state.step?.cropImage || ''}`;
     if (lastVisual === key) return;
     lastVisual = key;
+    stopVideo();
     visual.replaceChildren();
     visual.className = 'visual';
     if (mode === 'none') return;
+    if (mode === 'video') {
+      audio.stop();
+      event.classList.add('playing-video');
+      visual.setAttribute('aria-hidden', 'false');
+      const video = document.createElement('video');
+      video.className = 'event-video';
+      video.controls = true;
+      video.playsInline = true;
+      video.preload = 'auto';
+      video.setAttribute('aria-label', '우진 영상 1');
+      video.src = state.step.video;
+      activeVideo = video;
+      video.addEventListener('ended', () => { if (activeVideo === video) advance(); });
+      video.addEventListener('error', () => {
+        if (activeVideo === video) $('line').textContent = '영상을 불러오지 못했습니다. 다음을 눌러 사진을 확인해주세요.';
+      });
+      visual.append(video);
+      $('next-label').textContent = '영상 건너뛰기 ▼';
+      video.play().catch(() => { if (activeVideo === video) $('line').textContent = '영상의 재생 버튼을 눌러주세요.'; });
+      return;
+    }
     const silhouette = mode === 'silhouette';
     if (!replaying && state.step.phase === 'REVEAL') {
       if (mode === 'empty') audio.play('empty');
@@ -167,7 +195,20 @@
         if (lastVisual === key) visual.replaceChildren(placeholder(silhouette, item.member?.name || item.name));
       }, { once: true });
       img.src = assetPath;
-      visual.append(img);
+      if (mode === 'reveal' && ['bottle', 'finger'].includes(item.id)) {
+        const window = document.createElement('div');
+        window.className = `portrait-window portrait-${item.id}`;
+        if (item.id === 'bottle') {
+          // 큰 원본 전체를 스크롤할 수 있게 하되 첫 화면은 병의 얼굴에 맞춥니다.
+          img.addEventListener('load', () => {
+            if (lastVisual !== key) return;
+            window.scrollLeft = Math.max(0, img.clientWidth * .67 - window.clientWidth / 2);
+            window.scrollTop = Math.max(0, img.clientHeight * .65 - window.clientHeight / 2);
+          }, { once: true });
+        }
+        window.append(img);
+        visual.append(window);
+      } else visual.append(img);
     } else if (silhouette || mode === 'reveal') {
       visual.append(placeholder(silhouette, item.member?.name || item.name));
     } else if (mode === 'empty') {
@@ -213,6 +254,7 @@
   }
 
   function returnToScene(result = {}) {
+    stopVideo();
     audio.stop();
     audio.play(result.fingerJustUnlocked ? 'unlock' : result.id === 'dean' ? 'secret' : result.completed && !replaying ? 'found' : 'close');
     clearTimeout(zoomTimer);
@@ -266,11 +308,11 @@
       if (e.key === 'Escape') { e.preventDefault(); returnToScene(); }
       // 버튼의 기본 키보드 동작을 사용하여 대사가 두 번 넘어가지 않게 합니다.
       else if ((e.key === 'Enter' || e.key === ' ') && e.repeat) e.preventDefault();
-      else if ((e.key === 'Enter' || e.key === ' ') && ![dialogue, $('close')].includes(document.activeElement)) {
+      else if ((e.key === 'Enter' || e.key === ' ') && ![dialogue, $('close'), activeVideo].includes(document.activeElement)) {
         e.preventDefault(); advance();
       } else if (e.key === 'Tab') {
         e.preventDefault();
-        const controls = [$('close'), dialogue].filter(button => !button.disabled);
+        const controls = [$('close'), activeVideo, dialogue].filter(button => button && !button.disabled);
         const index = controls.indexOf(document.activeElement);
         controls[(index + (e.shiftKey ? -1 : 1) + controls.length) % controls.length].focus();
       }

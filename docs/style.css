@@ -55,6 +55,16 @@ button:focus-visible { outline: 3px dashed #e6ff99; outline-offset: 5px; }
 .visual img.asset { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; filter: var(--item-glow); animation: arrive .4s ease-out; }
 .visual img.silhouette:not(.natural-silhouette) { filter: brightness(0) var(--item-glow); }
 .visual img.silhouette.natural-silhouette { filter: var(--item-glow); }
+.portrait-window { height: 100%; max-width: 100%; aspect-ratio: 1; overflow: hidden; }
+.portrait-window.portrait-finger { aspect-ratio: 3/4; }
+.visual .portrait-window img.asset { scale: 2; transform-origin: 67% 65%; animation: none; }
+.visual .portrait-finger img.asset { transform-origin: 45% 35%; }
+.portrait-window.portrait-bottle { width: 100%; aspect-ratio: auto; overflow: auto; overscroll-behavior: contain; touch-action: pan-x pan-y; scrollbar-color: #fff48c #252219; }
+.visual .portrait-bottle img.asset { display: block; width: auto; max-width: none; height: 200%; scale: none; object-fit: contain; filter: none; }
+.event-video { width: 100%; height: 100%; object-fit: contain; }
+.event.playing-video .visual { top: 5%; bottom: 27%; left: 8%; right: 8%; }
+.event.playing-video .dialogue { min-height: 60px; padding-top: 10px; padding-bottom: 32px; }
+.event.playing-video .speaker { display: none; }
 .placeholder { text-align: center; text-shadow: 3px 3px #000; }
 .placeholder .unknown { display: block; font: 900 clamp(64px, 13svh, 150px)/1 'Courier New', monospace; color: #131610; text-shadow: -1px -1px 0 #fff48c, 1px 1px 0 #fff48c, 0 0 12px #ffe976a0, 0 0 30px #fff48c80; }
 .placeholder small { display: block; font-size: 14px; line-height: 1.7; color: #e9eccf; margin-top: 20px; }

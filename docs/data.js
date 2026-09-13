@@ -58,7 +58,7 @@ globalThis.GAME_DATA = {
       id: 'dean', name: '문가의 학장님', hotspot: { x: 28.9, y: 36.6, w: 5, h: 19 }, zoom: 1.9,
       crop: { x: 26.5, y: 26.8, w: 5, h: 19.5 },
       steps: [
-        { phase: 'DIALOGUE', visual: 'none', text: '학장님께서 여기 왜 . . .' },
+        { phase: 'DIALOGUE', visual: 'object', image: 'assets/items/dean-portrait.png', text: '어라, , , 학장님께서 여기 왜 . . .' },
         { phase: 'DIALOGUE', visual: 'none', text: '엇, 학장님 발 밑에 무언가 반짝인다 .' }
       ]
     },
@@ -77,6 +77,7 @@ globalThis.GAME_DATA = {
       crop: { x: 72, y: 32, w: 25, h: 34 },
       steps: [
         { phase: 'DIALOGUE', visual: 'object', cropImage: 'assets/main/finger-ready-screen.png', text: '김남주 교수님 손가락이 어딘가 이상하다..?' },
+        { phase: 'DIALOGUE', visual: 'video', video: 'assets/videos/woojin-1.mp4', text: '' },
         { phase: 'REVEAL', visual: 'reveal', image: 'assets/items/woojin-1.png', text: '김남주 교수님의 손가락은 알고보니 아픈 손가락 송우진 이었다!' },
         { phase: 'ITEM_DESCRIPTION', visual: 'reveal', image: 'assets/items/woojin-1.png', text: '교수님에게 욕먹는것을 좋아하는 상당히 아픈손가락 송우진이다!' },
         { phase: 'ITEM_DESCRIPTION', visual: 'reveal', image: 'assets/items/woojin-1.png', text: '취미: 남교수님에게 욕먹기' },
