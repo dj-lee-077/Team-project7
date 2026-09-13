@@ -14,6 +14,12 @@
   let seekBottle = false;
   let replaying = false;
   let activeVideo = null;
+  function updateProfileBoard() {
+    const board = $('profile-board');
+    const shouldShow = Boolean(state.active?.id === 'glasses' && state.step?.phase === 'TEAM_MEMBER');
+    board.hidden = !shouldShow;
+    event.classList.toggle('has-profile-board', shouldShow);
+  }
   function stopVideo() {
     if (activeVideo) { activeVideo.pause(); activeVideo.removeAttribute('src'); activeVideo.load(); activeVideo = null; }
     event.classList.remove('playing-video');
@@ -99,6 +105,7 @@
     event.hidden = false;
     event.classList.add('zooming');
     event.classList.toggle('final-event', id === 'finger');
+    event.classList.remove('has-profile-board');
     game.classList.add('in-event');
     lastVisual = '';
     lastLineText = null;
@@ -226,6 +233,7 @@
     const item = state.active;
     const step = state.step;
     if (!item || !step) return;
+    updateProfileBoard();
     $('speaker').textContent = step.phase === 'TEAM_MEMBER' && item.member
       ? `${item.member.name} · ${item.member.role}` : '살펴보기';
     // 화면 읽기 프로그램은 매 글자 대신 완성된 문장을 버튼 이름으로 읽습니다.
@@ -264,6 +272,8 @@
     lastVisual = '';
     lastLineText = null;
     event.hidden = true;
+    $('profile-board').hidden = true;
+    event.classList.remove('has-profile-board');
     scene.inert = false;
     game.classList.remove('in-event');
     visual.replaceChildren();
