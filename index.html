@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#151612">
+  <meta name="description" content="교수님의 애착템을 찾아보는 문송합니다의 인터랙티브 팀 소개.">
+  <title>문송합니다 — 교수님의 애착템</title>
+  <link rel="stylesheet" href="docs/style.css">
+</head>
+<body>
+  <main id="game" aria-label="문송합니다 애착템 탐색">
+    <div class="scene-frame">
+      <div id="scene" class="scene">
+        <div class="scene-art">
+          <img id="main-image" class="main-image" src="assets/main/main-image-v4.png" alt="검정 픽셀 글씨가 새겨진 애착템 상자를 든 김남주 교수님." draggable="false">
+          <img id="final-scene-image" class="final-scene-image" src="assets/main/finger-ready-screen.png" alt="엄지가 빛나기 시작한 장면에서 애착템 상자를 든 김남주 교수님." aria-hidden="true" draggable="false">
+        </div>
+        <div id="hotspots"></div>
+      </div>
+    </div>
+    <div class="side-copy side-copy-left" aria-hidden="true">남교수님의</div>
+    <div class="side-copy side-copy-right" aria-hidden="true">애착템을 찾아보자!</div>
+    <p id="hint" class="hint">★ 반짝이는 곳을 찾아보자 ★</p>
+    <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
+    <section id="intro" class="intro" role="dialog" aria-modal="true" aria-labelledby="intro-title">
+      <div class="intro-stamp" aria-hidden="true">★ 문송합니다 PRESENTS ★</div>
+      <h1 id="intro-title"><span>남교수님의</span><span>애착아이템을</span><span>소개합니다.</span></h1>
+      <button id="start" class="start" type="button">▶ 눌러서 입장 ◀</button>
+    </section>
+    <section id="event" class="event" role="dialog" aria-modal="true" aria-labelledby="speaker" hidden>
+      <div class="shade"></div>
+      <button id="close" class="close" type="button" aria-label="탐색으로 돌아가기">닫기 <span>ESC</span></button>
+      <div id="visual" class="visual" aria-hidden="true"></div>
+      <aside id="profile-board" class="profile-board" aria-label="성다희 자기소개와 사용설명서" hidden>
+        <div class="board-tape board-tape-left" aria-hidden="true"></div>
+        <div class="board-tape board-tape-right" aria-hidden="true"></div>
+        <p class="board-kicker">AI 비서 패치노트</p>
+        <section>
+          <h2>자기소개</h2>
+          <ul>
+            <li><strong>명확하게 말해주면 성능이 올라갑니다</strong><span>원하는 결과와 기준이 선명할수록 훨씬 빠르게 움직입니다.</span></li>
+            <li><strong>피드백 = 업데이트</strong><span>수정 요청은 결과물을 더 좋아지게 만드는 업데이트라고 생각합니다.</span></li>
+            <li><strong>모르면 물어봅니다</strong><span>혼자 오래 고민하기보다 확인하고 다음 단계로 넘어갑니다.</span></li>
+          </ul>
+        </section>
+        <section>
+          <h2>사용설명서</h2>
+          <ol>
+            <li><strong>01. 구체적인 명령어를 입력해주세요.</strong><span>두루뭉술한 요청에는 처리 속도가 급격히 저하됩니다.</span></li>
+            <li><strong>02. 피드백을 입력하면 자동 업데이트됩니다.</strong><span>한 번에 너무 많은 수정사항 입력 시 잠시 버퍼링될 수 있습니다.</span></li>
+            <li><strong>03. 오류 발생 시 질문 기능이 활성화됩니다.</strong><span>모르는 것을 아는 척하기보다 주변 사람에게 물어보는 편입니다.</span></li>
+          </ol>
+        </section>
+      </aside>
+      <div class="dialogue-wrap">
+        <div id="speaker" class="speaker">살펴보기</div>
+        <button id="dialogue" class="dialogue" type="button" aria-describedby="controls">
+          <span id="line" aria-hidden="true"></span>
+          <span id="next-label" class="next-label">다음 <span class="arrow">▼</span></span>
+        </button>
+        <p id="controls" class="controls">클릭 · Enter · Space: 문장 완성 / 다음 <span>Esc 돌아가기</span></p>
+      </div>
+    </section>
+  </main>
+  <script src="docs/data.js"></script>
+  <script src="docs/state.js"></script>
+  <script src="docs/effects.js"></script>
+  <script src="docs/audio.js"></script>
+  <script src="docs/highlights.js"></script>
+  <script src="docs/script.js"></script>
+</body>
+</html>
